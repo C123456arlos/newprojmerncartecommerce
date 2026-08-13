@@ -50,3 +50,7 @@ export const login = async (req: Request, res: Response) => {
     userData.isAdmin = getAdminStatus(userData.email)
     res.status(201).json({ user: userData, token })
 }
+export const deleteProduct = async (req: Request, res: Response) => {
+    await prisma.product.delete({ where: { id: req.params.id as string } })
+    res.status(201).json({ message: 'deleted' })
+}

@@ -22,6 +22,7 @@ export const getAdminStats = async (req: Request, res: Response) => {
     res.json({ totalOrders, totalUsers, totalProducts, outOfStock, totalPartners, recentOrders })
 }
 export const getDeliveryPartners = async (req: Request, res: Response) => {
+
     const partners = await prisma.deliveryPartner.findMany({
         orderBy: { createdAt: 'desc' }
     })
@@ -47,7 +48,7 @@ export const updateDeliveryPartner = async (req: Request, res: Response) => {
     if (name) data.name = name
     if (phone) data.phone = phone
     if (vehicleType) data.vehicleType = vehicleType
-    if (isActive) data.isActive = isActive
+    data.isActive = isActive
     try {
         const partner = await prisma.deliveryPartner.update({
             where: { id: req.params.id as string },

@@ -37,11 +37,11 @@ export const addAddress = async (req: Request, res: Response) => {
             lng: Number(lng)
         }
     })
-    const addAddress = await prisma.address.findMany({
+    const addresses = await prisma.address.findMany({
         where: { userId: req.user!.id },
         orderBy: { createdAt: 'asc' }
     })
-    res.status(201).json({ addAddress })
+    res.status(201).json({ addresses })
 }
 
 export const updateAddress = async (req: Request, res: Response) => {

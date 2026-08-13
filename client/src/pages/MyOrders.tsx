@@ -2,9 +2,11 @@ import { useEffect, useState } from "react"
 import type { Order } from "../types"
 import { Link, useSearchParams } from "react-router-dom"
 import { useCart } from "../context/CartContext"
-import { dummyDashboardOrdersData, statusColors } from "../assets/assets"
+import { statusColors } from "../assets/assets"
 import Loading from "../components/Loading"
 import { CalendarIcon, ChevronRightIcon, PackageIcon } from "lucide-react"
+import api from "../config/api"
+import toast from "react-hot-toast"
 
 const MyOrders = () => {
     const currency = import.meta.env.VITE_CURRENCY_SYMBOL || '$'
@@ -15,8 +17,16 @@ const MyOrders = () => {
     const tabs = ['all', 'Placed', "Out for Delivery", 'Delivered']
     const { clearCart } = useCart()
     const fetchOrders = async () => {
-        setOrders(dummyDashboardOrdersData as any)
-        setLoading(false)
+        setLoading(true)
+        try {
+            const params = activeTab !== 'all' ? `?status=${activeTab}` : ''
+            const { data } = await api.get(`/orders${params}`)
+            setOrders(data.orders)
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || error?.message)
+        } finally {
+            setLoading(false)
+        }
     }
     useEffect(() => {
         if (searchParams.get('clearCart')) {
@@ -48,8 +58,8 @@ const MyOrders = () => {
                     </div>) :
                     (<div className="space-y-4">
                         {orders.map((order) => (
-                            <Link key={order._id} to={`/orders/${order._id}`} className="block max-w-4xl bg-white rounded-2xl p-5 hover:shadow transition-all'">
-                                <p className="text-sm font-medium text-app-green">order #{order._id.slice(-8).toUpperCase()}</p>
+                            <Link key={order.id} to={`/orders/${order.id}`} className="block max-w-4xl bg-white rounded-2xl p-5 hover:shadow transition-all'">
+                                <p className="text-sm font-medium text-app-green">order #{order.id.slice(-8).toUpperCase()}</p>
                                 <div className="flex items-start justify-between mb-3">
                                     <div>
                                         <div className="flex items-center gap-2 mt-1">
@@ -74,7 +84,7 @@ const MyOrders = () => {
 
                                 <div className="flex justify-between items-center pt-3 text-sm">
                                     <span>{order.items.length} items</span>
-                                    <span className="font-semibold text-app-green ">{currency}{order.total.toFixed(2)}</span>
+                                    <span className="font-semibold text-app-green ">{currency}{order?.total?.toFixed(2)}</span>
                                 </div>
                             </Link>
                         ))}

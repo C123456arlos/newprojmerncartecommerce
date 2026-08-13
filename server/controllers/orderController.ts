@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../config/prisma.js";
-import { inngest } from "../inngest/index.js";
+import { inngest } from "../inngest/index.js"
+import Stripe from 'stripe'
 
 export const createOrder = async (req: Request, res: Response) => {
     const { items, shippingAddress, paymentMethod } = req.body
@@ -9,8 +10,12 @@ export const createOrder = async (req: Request, res: Response) => {
     }
     const productIds = items.map((i: any) => i.product)
     const products = await prisma.product.findMany({ where: { id: { in: productIds } } })
+    // type Record<K extends keyof any, T> = { [P in K]: T; }
+    // Construct a type with a set of properties K of type T
     const productMap: Record<string, (typeof products)[0]> = {}
-    productIds.forEach((p: any) => (productMap[p.id] = p))
+
+    products.forEach((p: any) => productMap[p.id] = p)
+    console.log(productMap)
     for (const item of items) {
         const product = productMap[item.product]
         if (!product || (product.stock ?? 0) < item.quantity) {
@@ -24,11 +29,13 @@ export const createOrder = async (req: Request, res: Response) => {
             product: dbProduct.id,
             name: dbProduct.name,
             image: dbProduct.image,
-            price: item.quantity,
-            unit: dbProduct.unit
+            price: dbProduct.price,
+            unit: dbProduct.unit,
+            quantity: item.quantity
         }
     })
     const subtotal = orderItems.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0)
+    console.log(subtotal)
     const deliveryFee = subtotal > 20 ? 0 : 1.99
     const tax = Math.round(subtotal * 0.08 * 100) / 100
     const total = Math.round((subtotal + deliveryFee + tax) * 100) / 100
@@ -46,12 +53,34 @@ export const createOrder = async (req: Request, res: Response) => {
         }
     })
     if (paymentMethod === 'card') {
-
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string)
+        const session = await stripe.checkout.sessions.create({
+            success_url: `${req.headers.origin}/orders?clearCart=true`,
+            cancel_url: `${req.headers.origin}/checkout`,
+            line_items: [
+                {
+                    price_data: {
+                        currency: 'usd',
+                        product_data: {
+                            name: 'payment groceries'
+                        },
+                        unit_amount: Math.round(total * 100)
+                    },
+                    quantity: 1,
+                },
+            ],
+            mode: 'payment',
+            metadata: { orderId: order.id }
+        });
+        return res.json({ url: session.url })
     }
     res.json({ order })
     for (const item of orderItems) {
         await prisma.product.update({
             where: { id: item.product },
+            // data: {
+            //     stock: item.quantity
+            // }
             data: { stock: { decrement: item.quantity } }
         })
     }
@@ -124,3 +153,4 @@ export const getOrderLocation = async (req: Request, res: Response) => {
     if (!order) return res.status(404).json({ message: 'order not found' })
     res.json({ liveLocation: order.liveLocation, status: order.status })
 }
+

@@ -20,7 +20,7 @@ const AddressForm = ({ resetForm, handleSubmit, form, setForm, editingId }: any)
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-app-green mb-1.5">street address</label>
-                            <input type="text" required className="w-full px-4 py-2.5 text-sm rounded-xl border border-app-border focus:border-app-green outline-none" value={form.label} onChange={(e) => setForm({ ...form, address: e.target.value })}></input>
+                            <input type="text" required className="w-full px-4 py-2.5 text-sm rounded-xl border border-app-border focus:border-app-green outline-none" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })}></input>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
