@@ -78,10 +78,10 @@ export const createOrder = async (req: Request, res: Response) => {
     for (const item of orderItems) {
         await prisma.product.update({
             where: { id: item.product },
-            // data: {
-            //     stock: item.quantity
-            // }
-            data: { stock: { decrement: item.quantity } }
+            data: {
+                stock: item.quantity
+            }
+            // data: { stock: { decrement: item.quantity } }
         })
     }
     for (const item of orderItems) {
